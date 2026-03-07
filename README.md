@@ -1,1 +1,3 @@
-# Astronomical-Anomaly-Detection-with-Spiking-Neural-Networks
+# Astronomical Anomaly Detection with Spiking Neural Networks
+
+

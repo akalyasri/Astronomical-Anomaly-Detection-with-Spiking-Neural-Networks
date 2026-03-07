@@ -1,0 +1,5 @@
+lightkurve 
+snntorch 
+torch 
+numpy 
+matplotlib
