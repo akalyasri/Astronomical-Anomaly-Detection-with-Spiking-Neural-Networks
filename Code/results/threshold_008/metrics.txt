@@ -1,0 +1,7 @@
+Encoding threshold: 0.08
+Anomaly decision threshold: 0.0256
+TP: 2, TN: 20, FP: 0, FN: 18
+Accuracy: 0.5500
+Precision: 1.0000
+Recall: 0.1000
+F1 Score: 0.1818
