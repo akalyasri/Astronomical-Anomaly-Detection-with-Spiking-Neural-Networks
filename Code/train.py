@@ -3,10 +3,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import random
 
 from preprocessing import preprocess, to_tensor
 from encoding import rate_encode
 from model import SimpleSNN
+
+# random setup for reproducibility
+SEED = 124
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+random.seed(SEED)
+torch.use_deterministic_algorithms(True)
+torch.backends.cudnn.benchmark = False
 
 # synthetic data generation (1 vs. multiple)
 def generate_signal(length=500, amplitude=1.0, frequency=1.0, phase=0.0, anomaly=False):
@@ -37,7 +46,8 @@ def train_model(model, optimizer, normal_signals, epochs=50, print_every=5):
     processed_signals = []
     for sig in normal_signals:
         sig_proc = preprocess(sig)
-        spikes = rate_encode(sig_proc, threshold=0.5)
+        spikes = rate_encode(sig_proc, threshold=0.8)
+        print(spikes[:20])  # console log first 20 spikes for verification
         tensor_sig = to_tensor(spikes)
         processed_signals.append(tensor_sig)
 
@@ -46,7 +56,9 @@ def train_model(model, optimizer, normal_signals, epochs=50, print_every=5):
 
     for epoch in range(epochs):
         output = model(x_batch)
-        loss = loss_fn(output, x_batch)
+        #loss = loss_fn(output, x_batch)
+        spike_penalty = output.mean()
+        loss = loss_fn(output, x_batch) + 0.1 * spike_penalty
 
         optimizer.zero_grad()
         loss.backward()
@@ -64,7 +76,7 @@ def compute_anomaly_scores(model, signals, labels=None):
     processed_signals = []
     for sig in signals:
         sig_proc = preprocess(sig)
-        spikes = rate_encode(sig_proc, threshold=0.5)
+        spikes = rate_encode(sig_proc, threshold=0.6)
         tensor_sig = to_tensor(spikes)
         processed_signals.append(tensor_sig)
 
@@ -75,11 +87,11 @@ def compute_anomaly_scores(model, signals, labels=None):
         scores = mse_per_signal.squeeze().numpy()
 
     # console log
-    # for i, score in enumerate(scores):
-    #     label_str = ""
-    #     if labels is not None:
-    #         label_str = " (Anomaly)" if labels[i] == 1 else " (Normal)"
-    #     print(f"Signal {i:02d}: Reconstruction Error = {score:.4f}{label_str}")
+    for i, score in enumerate(scores):
+        label_str = ""
+        if labels is not None:
+            label_str = " (Anomaly)" if labels[i] == 1 else " (Normal)"
+        print(f"Signal {i:02d}: Reconstruction Error = {score:.4f}{label_str}")
 
     return scores, x_batch, output
 
@@ -87,14 +99,14 @@ def compute_anomaly_scores(model, signals, labels=None):
 if __name__ == "__main__":
     # initializing model and optimizer
     model = SimpleSNN()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     # generate training signals (only normal)
     num_train = 50
     normal_signals = generate_signals(num_signals=num_train, anomaly=False)
 
     # training the model
-    epochs = 50
+    epochs = 150
     print_every = 5
     all_losses, x_train, output_train = train_model(model, optimizer, normal_signals, epochs, print_every)
 

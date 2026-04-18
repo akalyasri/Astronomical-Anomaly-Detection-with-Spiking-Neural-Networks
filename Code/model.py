@@ -7,10 +7,10 @@ class SimpleSNN(nn.Module):
         super().__init__()
 
         self.fc1 = nn.Linear(1, 10)
-        self.lif1 = snn.Leaky(beta=0.9)
+        self.lif1 = snn.Leaky(beta=0.85)
 
         self.fc2 = nn.Linear(10, 1)
-        self.lif2 = snn.Leaky(beta=0.9)
+        self.lif2 = snn.Leaky(beta=0.85)
 
     def forward(self, x):
         mem1 = self.lif1.init_leaky()
