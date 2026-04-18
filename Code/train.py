@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,6 +8,10 @@ import matplotlib.pyplot as plt
 from preprocessing import preprocess, to_tensor
 from encoding import rate_encode
 from model import SimpleSNN
+
+# auto create a results folder
+RESULTS_DIR = "results"
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 # synthetic data generation (1 vs. multiple)
 def generate_signal(length=500, amplitude=1.0, frequency=1.0, phase=0.0, anomaly=False):
@@ -37,7 +42,7 @@ def train_model(model, optimizer, normal_signals, epochs=50, print_every=5):
     processed_signals = []
     for sig in normal_signals:
         sig_proc = preprocess(sig)
-        spikes = rate_encode(sig_proc, threshold=0.5)
+        spikes = rate_encode(sig_proc, threshold=0.05)
         tensor_sig = to_tensor(spikes)
         processed_signals.append(tensor_sig)
 
@@ -64,7 +69,7 @@ def compute_anomaly_scores(model, signals, labels=None):
     processed_signals = []
     for sig in signals:
         sig_proc = preprocess(sig)
-        spikes = rate_encode(sig_proc, threshold=0.5)
+        spikes = rate_encode(sig_proc, threshold=0.05)
         tensor_sig = to_tensor(spikes)
         processed_signals.append(tensor_sig)
 
@@ -74,20 +79,13 @@ def compute_anomaly_scores(model, signals, labels=None):
         mse_per_signal = ((output - x_batch)**2).mean(dim=0)
         scores = mse_per_signal.squeeze().numpy()
 
-    # console log
-    # for i, score in enumerate(scores):
-    #     label_str = ""
-    #     if labels is not None:
-    #         label_str = " (Anomaly)" if labels[i] == 1 else " (Normal)"
-    #     print(f"Signal {i:02d}: Reconstruction Error = {score:.4f}{label_str}")
-
     return scores, x_batch, output
 
 # main
 if __name__ == "__main__":
     # initializing model and optimizer
     model = SimpleSNN()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     # generate training signals (only normal)
     num_train = 50
@@ -105,7 +103,11 @@ if __name__ == "__main__":
     plt.ylabel('MSE Loss')
     plt.title('Training Loss on Normal Signals')
     plt.legend()
-    plt.show()
+    # plt.show()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(RESULTS_DIR, "training_loss.png"))
+    plt.close()
 
     # generate test signals (mix of normal and anomalous)
     num_test = 20
@@ -118,11 +120,11 @@ if __name__ == "__main__":
     scores, x_test, output_test = compute_anomaly_scores(model, test_signals, labels)
 
     # simple thresholding for anomaly detection
-    threshold = np.mean(scores[:num_test]) + 2*np.std(scores[:num_test])
-    print(f"Anomaly detection threshold (based on normal signals) = {threshold:.4f}\n")
+    threshold = np.mean(scores[:num_test]) - 2*np.std(scores[:num_test])
+    print(f"Anomaly detection threshold (lower than normal) = {threshold:.4f}\n")
 
     for i, score in enumerate(scores):
-        if score > threshold:
+        if score < threshold:
             print(f"Signal {i:02d} flagged as ANOMALY (score = {score:.4f})")
         else:
             print(f"Signal {i:02d} considered NORMAL (score = {score:.4f})")
@@ -130,11 +132,15 @@ if __name__ == "__main__":
     # plot example signal vs reconstruction (first anomalous signal)
     idx_example = num_test  # first anomalous
     plt.figure(figsize=(12, 4))
-    plt.plot(x_test[:, idx_example, :].numpy(), label='Input Spikes (Anomalous)')
-    plt.plot(output_test[:, idx_example, :].numpy(), label='Output Spikes')
+    plt.plot(x_test[:, idx_example, :].numpy(), label='Encoded Singal (Anomalous)')
+    plt.plot(output_test[:, idx_example, :].numpy(), label='Reconstructed Signal')
     plt.title('SNN Reconstruction of Anomalous Signal')
     plt.legend()
-    plt.show()
+    #plt.show()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(RESULTS_DIR, "reconstruction_example.png"))
+    plt.close()
 
     # plot anomaly scores
     plt.figure(figsize=(10, 4))
@@ -142,4 +148,8 @@ if __name__ == "__main__":
     plt.xlabel('Test Signal Index')
     plt.ylabel('Reconstruction Error (Anomaly Score)')
     plt.title('Anomaly Scores (Green=Normal, Red=Anomalous)')
-    plt.show()
+    #plt.show()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(RESULTS_DIR, "anomaly_scores.png"))
+    plt.close()
