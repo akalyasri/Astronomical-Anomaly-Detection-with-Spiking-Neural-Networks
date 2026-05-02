@@ -1,0 +1,6 @@
+Kepler qualitative case study
+File: ../data/kplr008462852-2009131105131_llc.fits
+Synthetic encoding threshold: 0.01
+Kepler adaptive encoding threshold: 0.043670
+Reconstruction MSE: 0.574999
+Note: No ground-truth anomaly labels were used. This is a qualitative transfer test.

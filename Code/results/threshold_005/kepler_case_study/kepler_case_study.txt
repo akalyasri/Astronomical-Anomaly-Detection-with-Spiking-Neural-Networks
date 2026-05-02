@@ -1,0 +1,5 @@
+Kepler qualitative case study
+File: ../data/kplr008462852-2009131105131_llc.fits
+Encoding threshold: 0.05
+Reconstruction MSE: 0.931297
+Note: No ground-truth anomaly labels were used. This is a qualitative transfer test.

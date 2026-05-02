@@ -1,0 +1,8 @@
+Experiment: amplitude_burst
+Encoding threshold: 0.01
+Anomaly decision threshold: 0.7370
+TP: 20, TN: 15, FP: 5, FN: 0
+Accuracy: 0.8750
+Precision: 0.8000
+Recall: 1.0000
+F1 Score: 0.8889
