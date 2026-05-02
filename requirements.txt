@@ -3,3 +3,4 @@ snntorch
 torch 
 numpy 
 matplotlib
+astropy

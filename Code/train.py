@@ -8,12 +8,13 @@ import matplotlib.pyplot as plt
 from preprocessing import preprocess, to_tensor
 from encoding import rate_encode
 from model import SimpleSNN
+from astropy.io import fits
 
 # auto create a results folder
 # RESULTS_DIR = "results"
 # os.makedirs(RESULTS_DIR, exist_ok=True)
 
-threshold_val = 0.05  # change per experiment --> locked in the best encoding threshold now
+threshold_val = 0.01  # change per experiment --> locked in the best encoding threshold now
 
 RESULTS_DIR = f"results/threshold_{str(threshold_val).replace('.', '')}"
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -222,6 +223,91 @@ def evaluate_test_set(model, test_signals, labels, experiment_dir, experiment_na
     }
 
 
+def run_kepler_case_study(model, fits_path, experiment_dir):
+    os.makedirs(experiment_dir, exist_ok=True)
+
+    hdul = fits.open(fits_path)
+    data = hdul[1].data
+
+    time = data["TIME"]
+    flux = data["PDCSAP_FLUX"]
+
+    mask = ~np.isnan(time) & ~np.isnan(flux)
+    time = time[mask]
+    flux = flux[mask]
+
+    # use first 500 points so it matches synthetic signal length
+    time = time[:500]
+    flux = flux[:500]
+
+    # normalize Kepler flux first
+    flux_norm = (flux - np.mean(flux)) / (np.std(flux) + 1e-8)
+
+    # smooth slightly so encoding is less noisy
+    window = 5
+    flux_smooth = np.convolve(flux_norm, np.ones(window) / window, mode="same")
+
+    # scale to [-1, 1] like synthetic signal preprocessing
+    flux_scaled = flux_smooth / (np.max(np.abs(flux_smooth)) + 1e-8)
+
+    # adaptive threshold based on Kepler signal variation
+    kepler_encoding_threshold = 0.15 * np.std(flux_scaled)
+
+    spikes = rate_encode(flux_scaled, kepler_encoding_threshold)
+    tensor_sig = to_tensor(spikes)
+
+    x_kepler = tensor_sig.unsqueeze(1)
+
+    model.eval()
+    with torch.no_grad():
+        output = model(x_kepler)
+        mse = ((output - x_kepler) ** 2).mean().item()
+
+    # raw Kepler light curve
+    plt.figure(figsize=(12, 4))
+    plt.plot(time, flux)
+    plt.xlabel("Time")
+    plt.ylabel("PDCSAP Flux")
+    plt.title("Raw Kepler Light Curve")
+    plt.tight_layout()
+    plt.savefig(os.path.join(experiment_dir, "kepler_raw_light_curve.png"))
+    plt.close()
+
+
+    # Kelper preprocessing outputs
+    plt.figure(figsize=(12, 4))
+    plt.plot(time, flux_scaled)
+    plt.xlabel("Time")
+    plt.ylabel("Normalized Flux")
+    plt.title("Preprocessed Kepler Light Curve")
+    plt.tight_layout()
+    plt.savefig(os.path.join(experiment_dir, "kepler_preprocessed_light_curve.png"))
+    plt.close()
+
+    # encoded + reconstruction
+    plt.figure(figsize=(12, 4))
+    plt.plot(x_kepler[:, 0, :].numpy(), label="Encoded Kepler Signal")
+    plt.plot(output[:, 0, :].numpy(), label="Reconstructed Signal")
+    plt.xlabel("Time Step")
+    plt.ylabel("Encoded Value")
+    plt.title("SNN Reconstruction on Kepler Light Curve")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(experiment_dir, "kepler_reconstruction.png"))
+    plt.close()
+
+    with open(os.path.join(experiment_dir, "kepler_case_study.txt"), "w") as f:
+        f.write("Kepler qualitative case study\n")
+        f.write(f"File: {fits_path}\n")
+        f.write(f"Synthetic encoding threshold: {threshold_val}\n")
+        f.write(f"Kepler adaptive encoding threshold: {kepler_encoding_threshold:.6f}\n")
+        f.write(f"Reconstruction MSE: {mse:.6f}\n")
+        f.write("Note: No ground-truth anomaly labels were used. This is a qualitative transfer test.\n")
+
+    print(f"\nKepler case study saved to: {experiment_dir}")
+    print(f"Kepler reconstruction MSE: {mse:.6f}")
+
+
 # main
 if __name__ == "__main__":
     # initializing model and optimizer
@@ -290,3 +376,12 @@ if __name__ == "__main__":
             )
 
     print(f"\nSaved anomaly-type summary to: {summary_path}")
+
+    kepler_path = "../data/kplr008462852-2009131105131_llc.fits"
+    kepler_dir = os.path.join(RESULTS_DIR, "kepler_case_study")
+
+    run_kepler_case_study(
+        model=model,
+        fits_path=kepler_path,
+        experiment_dir=kepler_dir
+    )
