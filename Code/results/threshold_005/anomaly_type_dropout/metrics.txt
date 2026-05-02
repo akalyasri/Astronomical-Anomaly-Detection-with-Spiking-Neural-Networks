@@ -1,0 +1,8 @@
+Experiment: dropout
+Encoding threshold: 0.05
+Anomaly decision threshold: 0.4501
+TP: 10, TN: 16, FP: 4, FN: 10
+Accuracy: 0.6500
+Precision: 0.7143
+Recall: 0.5000
+F1 Score: 0.5882
