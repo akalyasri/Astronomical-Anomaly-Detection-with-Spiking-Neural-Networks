@@ -1,6 +1,6 @@
 Experiment: frequency_shift
 Encoding threshold: 0.05
-Anomaly decision threshold: 0.4386
+Anomaly decision threshold: 0.2254
 TP: 1, TN: 17, FP: 3, FN: 19
 Accuracy: 0.4500
 Precision: 0.2500

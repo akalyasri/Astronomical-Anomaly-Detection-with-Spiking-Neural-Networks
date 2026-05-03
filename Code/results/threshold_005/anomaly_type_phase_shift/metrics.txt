@@ -1,8 +1,8 @@
 Experiment: phase_shift
 Encoding threshold: 0.05
-Anomaly decision threshold: 0.4009
-TP: 4, TN: 16, FP: 4, FN: 16
-Accuracy: 0.5000
-Precision: 0.5000
-Recall: 0.2000
-F1 Score: 0.2857
+Anomaly decision threshold: 0.2327
+TP: 3, TN: 16, FP: 4, FN: 17
+Accuracy: 0.4750
+Precision: 0.4286
+Recall: 0.1500
+F1 Score: 0.2222

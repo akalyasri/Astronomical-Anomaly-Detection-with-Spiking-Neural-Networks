@@ -1,8 +1,8 @@
 Experiment: noise_burst
 Encoding threshold: 0.05
-Anomaly decision threshold: 0.4357
-TP: 20, TN: 17, FP: 3, FN: 0
-Accuracy: 0.9250
-Precision: 0.8696
-Recall: 1.0000
-F1 Score: 0.9302
+Anomaly decision threshold: 0.2389
+TP: 19, TN: 16, FP: 4, FN: 1
+Accuracy: 0.8750
+Precision: 0.8261
+Recall: 0.9500
+F1 Score: 0.8837

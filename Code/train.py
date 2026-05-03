@@ -14,7 +14,7 @@ from astropy.io import fits
 # RESULTS_DIR = "results"
 # os.makedirs(RESULTS_DIR, exist_ok=True)
 
-threshold_val = 0.01  # change per experiment --> locked in the best encoding threshold now
+threshold_val = 0.05  # change per experiment --> locked in the best encoding threshold now
 
 RESULTS_DIR = f"results/threshold_{str(threshold_val).replace('.', '')}"
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -251,7 +251,7 @@ def run_kepler_case_study(model, fits_path, experiment_dir):
     flux_scaled = flux_smooth / (np.max(np.abs(flux_smooth)) + 1e-8)
 
     # adaptive threshold based on Kepler signal variation
-    kepler_encoding_threshold = 0.15 * np.std(flux_scaled)
+    kepler_encoding_threshold = 0.05 * np.std(flux_scaled)
 
     spikes = rate_encode(flux_scaled, kepler_encoding_threshold)
     tensor_sig = to_tensor(spikes)
@@ -274,7 +274,7 @@ def run_kepler_case_study(model, fits_path, experiment_dir):
     plt.close()
 
 
-    # Kelper preprocessing outputs
+    # Kepler preprocessing outputs
     plt.figure(figsize=(12, 4))
     plt.plot(time, flux_scaled)
     plt.xlabel("Time")
